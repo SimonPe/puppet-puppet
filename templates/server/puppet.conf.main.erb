@@ -1,0 +1,14 @@
+## Server config
+
+    # Puppet 3.0.x requires this in both [main] and [master] - harmless on agents
+    autosign       = <%= scope.lookupvar('::puppet::autosign') %>
+
+    reports        = <%= scope.lookupvar('::puppet::server_reports') %>
+
+<% if scope.lookupvar("puppet::server_directory_environments") -%>
+    environmentpath  = <%= scope.lookupvar("puppet::server_envs_dir") %>
+    basemodulepath   = <%= [scope.lookupvar("puppet::server_common_modules_path")].flatten.join(':') %>
+<% end -%>
+<% if scope.lookupvar("puppet::server_default_manifest") -%>
+    default_manifest = <%= scope.lookupvar("puppet::server_default_manifest_path") %>
+<% end -%>

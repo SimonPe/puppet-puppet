@@ -88,16 +88,9 @@ describe 'puppet::config' do
             "    ssldir = #{ssldir}",
             '    privatekeydir = $ssldir/private_keys { group = service }',
             '    hostprivkey = $privatekeydir/$certname.pem { mode = 640 }',
-            '    autosign       = $confdir/autosign.conf { mode = 664 }',
             '    show_diff     = false',
             "    hiera_config = #{hiera_config}",
           ]
-          if Puppet.version >= '3.6'
-              concat_fragment_content.concat([
-                "    environmentpath  = #{codedir}/environments",
-                "    basemodulepath   = #{codedir}/environments/common:#{codedir}/modules:#{sharedir}/modules",
-              ])
-          end
           verify_concat_fragment_exact_contents(catalogue, 'puppet.conf+10-main', concat_fragment_content)
         end
       end
@@ -119,32 +112,6 @@ describe 'puppet::config' do
 
         it 'should contain auth.conf with allow' do
           should contain_file("#{confdir}/auth.conf").with_content(%r{^allow \$1, puppetproxy$})
-        end
-      end
-
-      describe "when autosign => true" do
-        let :pre_condition do
-          'class { "::puppet": autosign => true }'
-        end
-
-        it 'should contain puppet.conf [main] with autosign = true' do
-          verify_concat_fragment_contents(catalogue, 'puppet.conf+10-main', [
-            '[main]',
-            '    autosign       = true',
-          ])
-        end
-      end
-
-      describe 'when autosign => $confdir/custom_autosign {mode = 664}' do
-        let :pre_condition do
-          %q{class { "::puppet": autosign => '$confdir/custom_autosign {mode = 664}'}}
-        end
-
-        it 'should contain puppet.conf [main] with autosign = $confdir/custom_autosign {mode = 664}' do
-          verify_concat_fragment_contents(catalogue, 'puppet.conf+10-main', [
-            '[main]',
-            '    autosign       = $confdir/custom_autosign {mode = 664}',
-          ])
         end
       end
 
