@@ -32,17 +32,60 @@ class puppet::server::config inherits puppet::config {
     $server_node_terminus = 'plain'
   }
 
-  concat::fragment { 'puppet.conf+30-master':
-    target  => "${::puppet::dir}/puppet.conf",
-    content => template($::puppet::server::template),
-    order   => '30',
-  }
-  concat::fragment { 'puppet.conf+15-main-master':
-    target  => "${::puppet::dir}/puppet.conf",
-    content => template($::puppet::server::main_template),
-    order   => '15',
+  puppet::config::main {
+    'autosign':           value => $::puppet::autosign;
+    'reports':            value => $::puppet::server::reports;
   }
 
+  if $puppet::server::directory_environments {
+    puppet::config::main {
+      'environmentpath':  value => $puppet::server::envs_dir;
+      'basemodulepath':   value => $puppet::server::common_modules_path, joiner => ':';
+    }
+  }
+  if $puppet::server::default_manifest {
+    puppet::config::main {
+      'default_manifest': value => $puppet::server::default_manifest_path;
+    }
+  }
+
+  puppet::config::master {
+    'autosign':           value => $::puppet::server::autosign;
+    'external_nodes':     value => $server_external_nodes;
+    'node_terminus':      value => $server_node_terminus;
+    'ca':                 value => $::puppet::server::ca;
+    'certname':           value => $::puppet::server::certname;
+    'parser':             value => $::puppet::server::parser;
+    'strict_variables':   value => $::puppet::server::strict_variables;
+  }
+  if $::puppet::server::ssl_dir_manage {
+    puppet::config::master {
+      'ssldir':           value => $::puppet::server::ssl_dir;
+    }
+  }
+  if $server_environment_timeout {
+    puppet::config::master {
+      'environment_timeout':  value => $server_environment_timeout;
+    }
+  }
+  if $server_storeconfigs_backend {
+    puppet::config::master {
+      'storeconfigs':         value => true;
+      'storeconfigs_backend': value => $server_storeconfigs_backend;
+    }
+  }
+  if !$::puppet::server::directory_environments  and
+    ( $::puppet::server::git_repo or $::puppet::server::dynamic_environments ) {
+    puppet::config::master {
+      'manifest':   value => "${::puppet::server::envs_dir}/\$environment/manifests/site.pp";
+      'modulepath': value => "${::puppet::server::envs_dir}/\$environment/modules";
+    }
+    if $::puppet::server::config_version_cmd {
+      puppet::config::master {
+        'config_version': value => $::puppet::server::config_version_cmd;
+      }
+    }
+  }
 
   file { "${puppet::vardir}/reports":
     ensure => directory,
