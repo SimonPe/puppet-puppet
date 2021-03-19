@@ -38,8 +38,8 @@ define puppet::config::entry (
   # otherwise it just appends it with the joiner to separate it from the previous value.
   if (!defined(Concat::Fragment["puppet.conf_${section}_${key}"])){
     concat::fragment{"puppet.conf_${section}_${key}":
-      target  => "${puppet::dir}/puppet.conf",
-      content => "    ${key} = ${_value}",
+      target  => "${::puppet::dir}/puppet.conf",
+      content => "\n    ${key} = ${_value}",
       order   => "${sectionorder}_${section}_${key} ",
     }
   } else {
