@@ -25,13 +25,22 @@ define puppet::config::entry (
   } else {
     $_value = $value
   }
+  $nl = $facts['os']['family'] ? {
+    'Windows' => "\r\n",
+    default   => "\n",
+  }
 
   # note the spaces at he end of the 'order' parameters,
   # they make sure that '1_main ' is ordered before '1_main_*'
   ensure_resource('concat::fragment', "puppet.conf_${section}", {
       target  => "${puppet::dir}/puppet.conf",
-      content => "\n[${section}]",
+      content => "${nl}[${section}]",
       order   => "${sectionorder}_${section} ",
+  })
+  ensure_resource('concat::fragment', "puppet.conf_${section}_end", {
+      target  => "${puppet::dir}/puppet.conf",
+      content => $nl,
+      order   => "${sectionorder}_${section}~end",
   })
 
   # this adds the '$key =' for the first value,
@@ -39,7 +48,7 @@ define puppet::config::entry (
   if (!defined(Concat::Fragment["puppet.conf_${section}_${key}"])){
     concat::fragment{"puppet.conf_${section}_${key}":
       target  => "${::puppet::dir}/puppet.conf",
-      content => "\n    ${key} = ${_value}",
+      content => "${nl}    ${key} = ${_value}",
       order   => "${sectionorder}_${section}_${key} ",
     }
   } else {
